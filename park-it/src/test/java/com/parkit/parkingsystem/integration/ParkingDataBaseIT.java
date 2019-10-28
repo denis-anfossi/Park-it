@@ -117,7 +117,8 @@ public class ParkingDataBaseIT {
         assertNotNull(newTicket.getOutTime());
         assertTrue(newTicket.getOutTime().after(dateBefore));
         assertTrue(newTicket.getOutTime().before(dateAfter));
-        assertEquals(SECONDS.between(newTicket.getInTime().toInstant(), newTicket.getOutTime().toInstant()) / 3600.0 * Fare.CAR_RATE_PER_HOUR, newTicket.getPrice());
+        double duration = SECONDS.between(newTicket.getInTime().toInstant(), newTicket.getOutTime().toInstant());
+        assertEquals(duration > 1800 ? duration / 3600.0 * Fare.CAR_RATE_PER_HOUR : 0, newTicket.getPrice());
 
         verify(parkingSpotDAO, Mockito.times(2)).updateParking(any(ParkingSpot.class));
         assertEquals(1, parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR));

@@ -12,15 +12,15 @@ public class FareCalculatorService {
             throw new IllegalArgumentException("Out time provided is incorrect:" + ticket.getOutTime().toString());
         }
 
-        double duration = SECONDS.between(ticket.getInTime().toInstant(), ticket.getOutTime().toInstant()) / 3600.0;
+        double duration = SECONDS.between(ticket.getInTime().toInstant(), ticket.getOutTime().toInstant());
 
         switch (ticket.getParkingSpot().getParkingType()) {
             case CAR: {
-                ticket.setPrice(duration * Fare.CAR_RATE_PER_HOUR);
+                ticket.setPrice(duration > 1800 ? duration / 3600.0 * Fare.CAR_RATE_PER_HOUR : 0);
                 break;
             }
             case BIKE: {
-                ticket.setPrice(duration * Fare.BIKE_RATE_PER_HOUR);
+                ticket.setPrice(duration > 1800 ? duration / 3600.0 * Fare.BIKE_RATE_PER_HOUR : 0);
                 break;
             }
             default:
