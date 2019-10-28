@@ -20,6 +20,8 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +45,11 @@ public class ParkingDataBaseIT {
     private static InputReaderUtil inputReaderUtil;
 
     private Ticket ticket;
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
 
     @BeforeAll
     private static void setUp() throws Exception {
@@ -123,5 +130,40 @@ public class ParkingDataBaseIT {
         verify(parkingSpotDAO, Mockito.times(2)).updateParking(any(ParkingSpot.class));
         assertEquals(1, parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR));
     }
+
+    @Test
+    public void testParkingARecurringCar() {
+        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
+        setUpStreams();
+        parkingService.processIncomingVehicle();
+        assertFalse(outContent.toString().contains("Welcome back! As a recurring user of our parking lot, you'll benefit from a 5% discount."));
+        restoreStreams();
+        ticket = ticketDAO.getTicket("ABCDEF");
+        assertFalse(ticket.isDiscount());
+        try {
+            TimeUnit.SECONDS.sleep(1);
+            parkingService.processExitingVehicle();
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        setUpStreams();
+        parkingService.processIncomingVehicle();
+        assertTrue(outContent.toString().contains("Welcome back! As a recurring user of our parking lot, you'll benefit from a 5% discount."));
+
+        ticket = ticketDAO.getTicket("ABCDEF");
+        assertTrue(ticket.isDiscount());
+    }
+
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+
 
 }
